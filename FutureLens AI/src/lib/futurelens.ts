@@ -129,14 +129,16 @@ function load() {
   try {
     const raw = sessionStorage.getItem(KEY);
     if (raw) state = { ...initial, ...JSON.parse(raw) };
-  } catch {}
+  } catch (error) {
+    console.warn("Unable to restore FutureLens session.", error);
+  }
 }
 
 export function setSession(patch: Partial<State>) {
   load();
   state = { ...state, ...patch };
   try {
-    // Uploaded photo data URLs can be large; skip persisting them if storage fails.
+    // Selected photo data URLs can be large; skip persisting them if storage fails.
     sessionStorage.setItem(KEY, JSON.stringify(state));
   } catch {
     sessionStorage.setItem(KEY, JSON.stringify({ ...state, photo: null }));

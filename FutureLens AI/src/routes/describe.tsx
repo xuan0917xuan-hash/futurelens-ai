@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, ImagePlus, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/SiteHeader";
 import { NEEDS, setSession, useSession } from "@/lib/futurelens";
@@ -28,17 +28,11 @@ function Describe() {
   const s = useSession();
   const navigate = useNavigate();
 
-  const onFile = (f?: File) => {
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = () => setSession({ photo: r.result as string });
-    r.readAsDataURL(f);
-  };
   const toggle = (n: string) =>
     setSession({ needs: s.needs.includes(n) ? s.needs.filter((x) => x !== n) : [...s.needs, n] });
 
   const generate = () => {
-    if (!s.photo) { toast.error("Please choose or upload a park photo first."); return; }
+    if (!s.photo) { toast.error("Please choose a park photo first."); return; }
     if (s.needs.length === 0 && !s.description.trim()) { toast.error("Tell us at least one thing you'd like to improve."); return; }
     navigate({ to: "/concepts" });
   };
@@ -48,8 +42,8 @@ function Describe() {
       <PageHeader step="Step 1 of 4" title="Describe your space" subtitle="Pick a park photo and tell us what would make it better for your community." />
       <div className="grid gap-8 lg:grid-cols-5">
         <section className="rounded-3xl border border-border bg-card p-6 shadow-soft lg:col-span-3">
-          <h2 className="text-xl font-semibold">1. Choose a photo</h2>
-          <div className="mt-5 grid grid-cols-3 gap-3">
+          <h2 className="text-xl font-semibold">1. Choose an existing park photo</h2>
+          <div className="mt-5 grid grid-cols-2 gap-3">
             {SAMPLES.map((p) => (
               <button key={p.label} onClick={() => setSession({ photo: p.src })}
                 className={`group relative overflow-hidden rounded-2xl ring-2 transition ${s.photo === p.src ? "ring-primary" : "ring-transparent hover:ring-sage"}`}>
@@ -58,16 +52,12 @@ function Describe() {
                 {s.photo === p.src && <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground"><Check className="h-4 w-4" /></span>}
               </button>
             ))}
-            <label className="grid aspect-[4/3] cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-input text-center text-sm text-muted-foreground transition hover:border-primary hover:text-primary">
-              <span className="flex flex-col items-center gap-1"><ImagePlus className="h-6 w-6" /> Upload photo</span>
-              <input type="file" accept="image/*" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
-            </label>
           </div>
           <div className="mt-6 overflow-hidden rounded-2xl bg-muted">
             {s.photo ? (
               <img src={s.photo} alt="Selected park" className="aspect-[16/9] w-full object-cover" />
             ) : (
-              <div className="grid aspect-[16/9] place-items-center text-muted-foreground">Your photo preview appears here</div>
+              <div className="grid aspect-[16/9] place-items-center text-muted-foreground">Choose a park photo to preview it here</div>
             )}
           </div>
         </section>
