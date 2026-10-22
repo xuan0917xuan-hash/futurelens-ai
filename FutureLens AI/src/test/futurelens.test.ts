@@ -15,19 +15,17 @@ describe("FutureLens demo state", () => {
     expect(CONCEPTS.every((concept) => concept.image.length > 0)).toBe(true);
   });
 
-  it("updates the selected park and needs in session state", () => {
+  it("updates the selected park in session state", () => {
     sessionStorage.clear();
     const { result } = renderHook(() => useSession());
 
     act(() => {
       setSession({
         photo: CONCEPTS.find((concept) => concept.id === "B")!.image,
-        needs: ["Better accessibility"],
       });
     });
 
     expect(result.current.photo).toBe(CONCEPTS.find((concept) => concept.id === "B")!.image);
-    expect(result.current.needs).toEqual(["Better accessibility"]);
   });
 
   it("adds exactly one session vote to the chosen concept", () => {

@@ -1,16 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, MessageSquare, Sparkles, Trophy, Users } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, BarChart3, CheckCircle2, MessageSquare, Users } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useEffect, useState } from "react";
 import { DemoBadge } from "@/components/SiteHeader";
-import { CONCEPTS, SAMPLE_COMMENTS, SAMPLE_CONCERNS, SAMPLE_REQUESTS, conceptById, tallyVotes, topConcept, useSession } from "@/lib/futurelens";
+import { DEMO_CONSULTATION_ID } from "@/lib/futurelens";
+import { getCurrentUser } from "@/server/auth";
+import { getDeveloperDashboard, type DeveloperDashboardData } from "@/server/developer-dashboard";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Developer Dashboard — FutureLens AI" },
-      { name: "description", content: "Community preferences, top requests and concerns for park redevelopment (demonstration data)." },
-      { property: "og:title", content: "Developer Dashboard — FutureLens AI" },
-      { property: "og:description", content: "Community preferences and concerns at a glance." },
+      { name: "description", content: "Live community consultation statistics for developers." },
     ],
   }),
   component: Dashboard,
@@ -19,115 +20,59 @@ export const Route = createFileRoute("/dashboard")({
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-5)"];
 
 function Dashboard() {
-  const s = useSession();
-  const votes = tallyVotes(s.vote?.concept ?? null);
-  const total = votes.A + votes.B + votes.C;
-  const top = conceptById(topConcept(votes));
-  const pie = CONCEPTS.map((c) => ({ name: c.name, value: votes[c.id] }));
+  const navigate = useNavigate();
+  const [data, setData] = useState<DeveloperDashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const stats = [
-    { icon: Users, label: "Total votes", value: total },
-    { icon: Trophy, label: "Leading concept", value: top.name },
-    { icon: MessageSquare, label: "Comments", value: 214 },
-    { icon: AlertTriangle, label: "Top request", value: "Shade" },
-  ];
+  useEffect(() => {
+    void getCurrentUser().then(async (auth) => {
+      if (!auth.user || auth.user.role !== "developer") {
+        navigate({ to: "/developer-login" });
+        return;
+      }
+      try {
+        setData(await getDeveloperDashboard({ data: { consultationId: DEMO_CONSULTATION_ID } }));
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load dashboard statistics.");
+      }
+    });
+  }, [navigate]);
+
+  if (error) {
+    return <div className="mx-auto max-w-3xl px-5 pt-16 lg:px-8"><div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-8 text-center"><AlertTriangle className="mx-auto h-8 w-8 text-destructive" /><h1 className="mt-4 text-2xl font-semibold">Unable to load dashboard</h1><p className="mt-2 text-muted-foreground">{error}</p></div></div>;
+  }
+  if (!data) return <div className="mx-auto max-w-3xl px-5 pt-16 text-center text-muted-foreground">Loading live consultation statistics…</div>;
+
+  const totalVotes = data.voteCount || 1;
+  const pie = data.concepts.map((concept) => ({ name: concept.name, value: concept.votes }));
+  const requestBars = data.recentRequests.map((request, index) => ({ name: `Request ${index + 1}`, count: request.body.length }));
+  const phaseLabel = data.consultation.phase.replace("_", " ");
 
   return (
     <div className="mx-auto max-w-7xl px-5 pt-12 lg:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="eyebrow">Developer dashboard</p>
-          <h1 className="mt-2 text-4xl font-semibold md:text-5xl">Maple Street Park insights</h1>
-        </div>
-        <DemoBadge>All figures are demonstration data, not real community research</DemoBadge>
+        <div><p className="eyebrow">Developer dashboard</p><h1 className="mt-2 text-4xl font-semibold md:text-5xl">{data.consultation.title}</h1></div>
+        <DemoBadge>Live Supabase data</DemoBadge>
       </div>
-
       <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((st) => (
-          <div key={st.label} className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-            <st.icon className="h-5 w-5 text-primary" />
-            <p className="mt-4 text-sm text-muted-foreground">{st.label}</p>
-            <p className="mt-1 font-display text-3xl font-semibold">{st.value}</p>
-          </div>
-        ))}
+        {[
+          { icon: Users, label: "Unique residents", value: data.participantCount },
+          { icon: MessageSquare, label: "Feedback submissions", value: `${data.feedbackCount}/${data.consultation.feedbackThreshold}` },
+          { icon: BarChart3, label: "Votes cast", value: data.voteCount },
+          { icon: CheckCircle2, label: "Consultation phase", value: phaseLabel },
+        ].map((stat) => <div key={stat.label} className="rounded-3xl border border-border bg-card p-6 shadow-soft"><stat.icon className="h-5 w-5 text-primary" /><p className="mt-4 text-sm text-muted-foreground">{stat.label}</p><p className="mt-1 font-display text-2xl font-semibold capitalize">{stat.value}</p></div>)}
       </div>
-
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
           <h2 className="text-xl font-semibold">Vote share</h2>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={pie} dataKey="value" innerRadius={55} outerRadius={85} paddingAngle={3} stroke="none">
-                  {pie.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="space-y-2 text-sm">
-            {CONCEPTS.map((c, i) => (
-              <li key={c.id} className="flex items-center justify-between">
-                <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: COLORS[i] }} />{c.name}</span>
-                <span className="font-semibold">{Math.round((votes[c.id] / total) * 100)}%</span>
-              </li>
-            ))}
-          </ul>
+          {data.voteCount > 0 ? <div className="h-56"><ResponsiveContainer><PieChart><Pie data={pie} dataKey="value" innerRadius={55} outerRadius={85} paddingAngle={3} stroke="none">{pie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div> : <p className="py-20 text-center text-sm text-muted-foreground">No votes recorded yet.</p>}
+          <ul className="space-y-2 text-sm">{data.concepts.map((concept, i) => <li key={concept.id} className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />{concept.name}</span><span className="font-semibold">{Math.round((concept.votes / totalVotes) * 100)}%</span></li>)}</ul>
         </section>
-
         <section className="rounded-3xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
-          <h2 className="text-xl font-semibold">Most requested improvements</h2>
-          <div className="mt-4 h-72">
-            <ResponsiveContainer>
-              <BarChart data={SAMPLE_REQUESTS} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="need" width={170} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: "var(--muted)" }} />
-                <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 8, 8, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-      </div>
-
-      <section className="mt-6 rounded-3xl bg-charcoal p-8 text-charcoal-foreground">
-        <div className="flex flex-wrap items-center gap-3">
-          <Sparkles className="h-5 w-5 text-sage" />
-          <h2 className="text-xl font-semibold">Community summary</h2>
-          <DemoBadge>Sample AI-style summary · demonstration content</DemoBadge>
-        </div>
-        <p className="mt-4 max-w-3xl font-display text-2xl leading-snug">
-          “Residents value shaded seating, more trees and safer walking paths. Several comments request improved accessibility and family-friendly facilities.”
-        </p>
-      </section>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className="rounded-3xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
-          <h2 className="text-xl font-semibold">Sample resident comments</h2>
-          <ul className="mt-4 divide-y divide-border">
-            {SAMPLE_COMMENTS.map((c, i) => (
-              <li key={i} className="flex gap-4 py-4">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-primary">{c.concept}</span>
-                <p className="text-sm">{c.text}</p>
-              </li>
-            ))}
-            {s.vote?.reason && (
-              <li className="flex gap-4 py-4">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{s.vote.concept}</span>
-                <p className="text-sm"><b>Your comment:</b> {s.vote.reason}</p>
-              </li>
-            )}
-          </ul>
-        </section>
-        <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-          <h2 className="text-xl font-semibold">Common concerns</h2>
-          <ul className="mt-4 space-y-3">
-            {SAMPLE_CONCERNS.map((c) => (
-              <li key={c} className="flex items-center gap-3 rounded-2xl bg-warning/60 px-4 py-3 text-sm font-medium text-warning-foreground">
-                <AlertTriangle className="h-4 w-4 shrink-0" /> {c}
-              </li>
-            ))}
-          </ul>
+          <h2 className="text-xl font-semibold">Generated concepts</h2>
+          <div className="mt-5 space-y-3">{data.concepts.length > 0 ? data.concepts.map((concept) => <div key={concept.id} className="flex items-center justify-between rounded-2xl bg-muted px-4 py-3"><span className="font-medium">{concept.name}</span><span className="text-sm text-muted-foreground">{concept.status} · {concept.imageReady ? "image ready" : "image pending"} · {concept.votes} votes</span></div>) : <p className="text-sm text-muted-foreground">No concepts generated yet.</p>}</div>
+          <h2 className="mt-8 text-xl font-semibold">Recent request activity</h2>
+          {requestBars.length > 0 ? <div className="mt-3 h-48"><ResponsiveContainer><BarChart data={requestBars} layout="vertical" margin={{ left: 20 }}><XAxis type="number" hide /><YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="count" fill="var(--chart-1)" radius={[0, 8, 8, 0]} barSize={18} /></BarChart></ResponsiveContainer></div> : <p className="mt-3 text-sm text-muted-foreground">No resident requests yet.</p>}
         </section>
       </div>
     </div>

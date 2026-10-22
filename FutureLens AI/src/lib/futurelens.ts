@@ -4,6 +4,16 @@ import conceptB from "@/assets/concept-b.jpg";
 import conceptC from "@/assets/concept-c.jpg";
 
 export type ConceptId = "A" | "B" | "C";
+export const DEMO_CONSULTATION_ID = "00000000-0000-0000-0000-000000000001";
+export const DEMO_OFFICIAL_CONCEPT_IDS: Record<ConceptId, string> = {
+  A: "00000000-0000-0000-0000-000000000101",
+  B: "00000000-0000-0000-0000-000000000102",
+  C: "00000000-0000-0000-0000-000000000103",
+};
+export const DEMO_SOURCE_IMAGE_IDS = {
+  mapleStreet: "00000000-0000-0000-0000-000000000201",
+  riverside: "00000000-0000-0000-0000-000000000202",
+} as const;
 
 export const CONCEPTS: {
   id: ConceptId;
@@ -62,15 +72,6 @@ export const CONCEPTS: {
   },
 ];
 
-export const NEEDS = [
-  "More shaded seating",
-  "More trees and green spaces",
-  "Safer walking paths",
-  "Child-friendly facilities",
-  "Better accessibility",
-  "Relaxation areas",
-];
-
 /** Demonstration voting baseline — not real community data. */
 export const SAMPLE_VOTES: Record<ConceptId, number> = { A: 142, B: 118, C: 96 };
 
@@ -113,12 +114,11 @@ export function topConcept(votes: Record<ConceptId, number>): ConceptId {
 type State = {
   photo: string | null;
   description: string;
-  needs: string[];
-  selected: ConceptId | null;
+  selected: string | null;
   vote: { concept: ConceptId; reason: string } | null;
 };
 const KEY = "futurelens-session";
-const initial: State = { photo: null, description: "", needs: [], selected: null, vote: null };
+const initial: State = { photo: null, description: "", selected: null, vote: null };
 let state: State = initial;
 let loaded = false;
 const listeners = new Set<() => void>();

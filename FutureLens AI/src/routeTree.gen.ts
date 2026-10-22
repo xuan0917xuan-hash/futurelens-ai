@@ -14,6 +14,8 @@ import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ConceptsRouteImport } from './routes/concepts'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DescribeRouteImport } from './routes/describe'
+import { Route as DeveloperLoginRouteImport } from './routes/developer-login'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as VoteRouteImport } from './routes/vote'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +43,16 @@ const DescribeRoute = DescribeRouteImport.update({
   path: '/describe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeveloperLoginRoute = DeveloperLoginRouteImport.update({
+  id: '/developer-login',
+  path: '/developer-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VoteRoute = VoteRouteImport.update({
   id: '/vote',
   path: '/vote',
@@ -53,6 +65,8 @@ export interface FileRoutesByFullPath {
   '/concepts': typeof ConceptsRoute
   '/dashboard': typeof DashboardRoute
   '/describe': typeof DescribeRoute
+  '/developer-login': typeof DeveloperLoginRoute
+  '/login': typeof LoginRoute
   '/vote': typeof VoteRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +75,8 @@ export interface FileRoutesByTo {
   '/concepts': typeof ConceptsRoute
   '/dashboard': typeof DashboardRoute
   '/describe': typeof DescribeRoute
+  '/developer-login': typeof DeveloperLoginRoute
+  '/login': typeof LoginRoute
   '/vote': typeof VoteRoute
 }
 export interface FileRoutesById {
@@ -70,14 +86,31 @@ export interface FileRoutesById {
   '/concepts': typeof ConceptsRoute
   '/dashboard': typeof DashboardRoute
   '/describe': typeof DescribeRoute
+  '/developer-login': typeof DeveloperLoginRoute
+  '/login': typeof LoginRoute
   '/vote': typeof VoteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/compare' | '/concepts' | '/dashboard' | '/describe' | '/vote'
+    | '/'
+    | '/compare'
+    | '/concepts'
+    | '/dashboard'
+    | '/describe'
+    | '/developer-login'
+    | '/login'
+    | '/vote'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/compare' | '/concepts' | '/dashboard' | '/describe' | '/vote'
+  to:
+    | '/'
+    | '/compare'
+    | '/concepts'
+    | '/dashboard'
+    | '/describe'
+    | '/developer-login'
+    | '/login'
+    | '/vote'
   id:
     | '__root__'
     | '/'
@@ -85,6 +118,8 @@ export interface FileRouteTypes {
     | '/concepts'
     | '/dashboard'
     | '/describe'
+    | '/developer-login'
+    | '/login'
     | '/vote'
   fileRoutesById: FileRoutesById
 }
@@ -94,6 +129,8 @@ export interface RootRouteChildren {
   ConceptsRoute: typeof ConceptsRoute
   DashboardRoute: typeof DashboardRoute
   DescribeRoute: typeof DescribeRoute
+  DeveloperLoginRoute: typeof DeveloperLoginRoute
+  LoginRoute: typeof LoginRoute
   VoteRoute: typeof VoteRoute
 }
 
@@ -134,6 +171,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DescribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/developer-login': {
+      id: '/developer-login'
+      path: '/developer-login'
+      fullPath: '/developer-login'
+      preLoaderRoute: typeof DeveloperLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vote': {
       id: '/vote'
       path: '/vote'
@@ -150,6 +201,8 @@ const rootRouteChildren: RootRouteChildren = {
   ConceptsRoute: ConceptsRoute,
   DashboardRoute: DashboardRoute,
   DescribeRoute: DescribeRoute,
+  DeveloperLoginRoute: DeveloperLoginRoute,
+  LoginRoute: LoginRoute,
   VoteRoute: VoteRoute,
 }
 export const routeTree = rootRouteImport

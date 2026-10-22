@@ -1,8 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DemoBadge, PageHeader } from "@/components/SiteHeader";
-import { CONCEPTS, setSession, useSession } from "@/lib/futurelens";
+import { CONCEPTS, DEMO_CONSULTATION_ID, setSession, useSession } from "@/lib/futurelens";
+import { getCurrentUser } from "@/server/auth";
+import { getPublishedConcepts, type PublishedConcept } from "@/server/published-concepts";
 
 export const Route = createFileRoute("/concepts")({
   head: () => ({
@@ -21,22 +24,42 @@ const TONES = ["bg-primary text-primary-foreground", "bg-sage text-charcoal", "b
 function Concepts() {
   const s = useSession();
   const navigate = useNavigate();
+  const [published, setPublished] = useState<PublishedConcept[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void getCurrentUser().then(async (auth) => {
+      if (!auth.user) return;
+      setLoading(true);
+      try {
+        const concepts = await getPublishedConcepts({ data: { consultationId: DEMO_CONSULTATION_ID } });
+        if (active && concepts.length > 0) setPublished(concepts);
+      } finally {
+        if (active) setLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  const live = published.length > 0;
   return (
     <div className="mx-auto max-w-7xl px-5 lg:px-8">
-      <PageHeader step="Step 2 of 4" title="Your design concepts" subtitle="Three directions for your park. Select one to explore, then compare them side by side." />
+      <PageHeader step="Step 2 of 4" title="Your design concepts" subtitle={live ? "Representative proposals shaped from the combined community brief." : "Three directions for your park. Select one to explore, then compare them side by side."} />
       <div className="mb-8 flex flex-col items-center gap-2 text-center">
-        <DemoBadge>Demonstration concepts</DemoBadge>
-        <p className="max-w-xl text-sm text-muted-foreground">These are prepared sample concepts for illustration — not verified AI-generated construction plans.</p>
-        {s.needs.length > 0 && <p className="text-sm">Based on your needs: <span className="font-medium text-primary">{s.needs.join(" · ")}</span></p>}
+        <DemoBadge>{live ? "Community-generated concepts" : "Demonstration concepts"}</DemoBadge>
+        <p className="max-w-xl text-sm text-muted-foreground">{live ? "Generated from the combined requests submitted by residents." : "These are prepared sample concepts for illustration — not verified AI-generated construction plans."}</p>
       </div>
+      {loading && <p className="mb-6 text-center text-sm text-muted-foreground">Checking for published community concepts…</p>}
       <div className="grid gap-6 lg:grid-cols-3">
-        {CONCEPTS.map((c, i) => {
-          const on = s.selected === c.id;
+        {(live ? published : CONCEPTS).map((c, i) => {
+          const id = c.id;
+          const on = s.selected === id;
           return (
-            <article key={c.id} className={`flex flex-col overflow-hidden rounded-3xl border bg-card shadow-soft transition-all hover:-translate-y-1 hover:shadow-elegant ${on ? "border-primary ring-2 ring-primary" : "border-border"}`}>
+            <article key={id} className={`flex flex-col overflow-hidden rounded-3xl border bg-card shadow-soft transition-all hover:-translate-y-1 hover:shadow-elegant ${on ? "border-primary ring-2 ring-primary" : "border-border"}`}>
               <div className="relative">
-                <img src={c.image} alt={c.name} loading="lazy" width={1024} height={768} className="aspect-[4/3] w-full object-cover" />
-                <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold ${TONES[i]}`}>Concept {c.id}</span>
+                <img src={live && c.imageUrl ? c.imageUrl : !live ? c.image : CONCEPTS[i % CONCEPTS.length].image} alt={c.name} loading="lazy" width={1024} height={768} className="aspect-[4/3] w-full object-cover" />
+                <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold ${TONES[i % TONES.length]}`}>Concept {live ? i + 1 : c.id}</span>
               </div>
               <div className="flex flex-1 flex-col p-7">
                 <p className="eyebrow">{c.tagline}</p>

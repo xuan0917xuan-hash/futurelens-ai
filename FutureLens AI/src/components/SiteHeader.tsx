@@ -1,6 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { Leaf, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Leaf, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { getCurrentUser, signOut } from "@/server/auth";
+import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/describe", label: "Describe" },
@@ -8,23 +11,44 @@ const NAV = [
   { to: "/compare", label: "Compare" },
   { to: "/vote", label: "Vote" },
   { to: "/dashboard", label: "Dashboard" },
+  { to: "/login", label: "Sign in" },
 ] as const;
 
 export function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2.5">
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary text-primary-foreground shadow-soft">
         <Leaf className="h-5 w-5" />
       </span>
       <span className="font-display text-xl font-semibold tracking-tight">
         FutureLens <span className="text-primary">AI</span>
       </span>
-    </Link>
+    </div>
   );
 }
 
 export function SiteHeader() {
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const [userRole, setUserRole] = useState<"resident" | "developer" | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    void getCurrentUser().then((result) => {
+      setIsAuthenticated(Boolean(result.user));
+      setUserRole(result.user?.role ?? null);
+    });
+  }, []);
+
+  const logout = async () => {
+    try {
+      await signOut();
+      setUserRole(null);
+      navigate({ to: userRole === "developer" ? "/developer-login" : "/login" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to sign out.");
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
@@ -41,19 +65,12 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="Toggle menu">
-          {open ? <X /> : <Menu />}
-        </button>
+        {isAuthenticated && (
+          <Button variant="outline" size="sm" onClick={logout} aria-label="Log out">
+            <LogOut /> Log out
+          </Button>
+        )}
       </div>
-      {open && (
-        <nav className="flex flex-col gap-1 border-t border-border px-5 py-3 md:hidden">
-          {NAV.map((n) => (
-            <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 font-medium hover:bg-accent">
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-      )}
     </header>
   );
 }
