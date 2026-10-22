@@ -71,8 +71,7 @@ async function handle(request: Request) {
     return json({ error: "Invalid request body." }, 400);
   }
   if (!isUuid(input.consultationId) || !isUuid(input.sourceImageId)
-    || typeof input.prompt !== "string" || input.prompt.trim().length < 1
-    || !Array.isArray(input.needs)) {
+    || typeof input.prompt !== "string" || input.prompt.trim().length < 1) {
     return json({ error: "Invalid personal generation request." }, 400);
   }
 

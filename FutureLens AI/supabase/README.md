@@ -55,6 +55,7 @@ Supabase access token. It does not read the Cloudflare secrets and never sends
 them to the browser. Deploy from the project root with the Supabase CLI:
 
 ```text
+supabase link --project-ref <project-ref>
 supabase functions deploy generate-concepts
 supabase functions deploy generate-personal-concept
 supabase secrets set CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=...

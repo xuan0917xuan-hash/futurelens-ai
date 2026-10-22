@@ -15,12 +15,17 @@ function requiredSupabaseUrl(): string {
 export function isSupabaseConfigured(): boolean {
   return Boolean(
     envValue("SUPABASE_URL", "VITE_SUPABASE_URL")
-      && envValue("SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY"),
+      && envValue("SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "VITE_SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY"),
   );
 }
 
 export function createRequestSupabaseClient() {
-  const publishableKey = envValue("SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY");
+  const publishableKey = envValue(
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_ANON_KEY",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_ANON_KEY",
+  );
   if (!publishableKey) throw new Error("Missing required server environment variable: SUPABASE_PUBLISHABLE_KEY");
   return createServerClient(requiredSupabaseUrl(), publishableKey, {
     cookies: {

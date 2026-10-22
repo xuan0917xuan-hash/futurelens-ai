@@ -54,7 +54,7 @@ function Describe() {
     try {
       const auth = await getCurrentUser();
       if (!auth.configured) {
-        toast.error("Supabase is not configured. Please configure the app before generating an image.");
+        toast.error("Supabase is not configured. Check that .env is in the FutureLens AI folder, then restart npm run dev.");
         return;
       }
       if (!auth.user) {
