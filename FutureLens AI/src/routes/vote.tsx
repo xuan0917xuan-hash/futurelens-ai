@@ -41,6 +41,7 @@ function Vote() {
   const [published, setPublished] = useState<PublishedConcept[]>([]);
   const [votingOpen, setVotingOpen] = useState(false);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [authConfigured, setAuthConfigured] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Checking whether voting is open…");
   const [voted, setVoted] = useState(false);
   const [reason, setReason] = useState("");
@@ -53,6 +54,7 @@ function Vote() {
 
   useEffect(() => {
     void getCurrentUser().then(async (auth) => {
+      setAuthConfigured(auth.configured);
       if (!auth.user) {
         setStatusMessage(auth.configured ? "Please sign in as a resident to check the consultation voting status." : "Voting is unavailable until Supabase is configured.");
         return;
@@ -92,7 +94,7 @@ function Vote() {
   }, []);
 
   const submit = async () => {
-    if (s.vote || voted) { toast.info("You've already voted in this session."); return; }
+    if (voted) { toast.info("You've already voted in this consultation."); return; }
     if (!current) { toast.error("Please choose a concept to vote for."); return; }
     try {
       const auth = await getCurrentUser();
@@ -109,9 +111,9 @@ function Vote() {
           },
         });
       }
-      if (live) {
+      if (auth.configured && auth.user) {
         setVoted(true);
-        toast.success(`Thanks! Your vote for ${selectedLiveConcept?.name ?? "the selected concept"} was recorded.`);
+        toast.success(`Thanks! Your vote for ${live ? selectedLiveConcept?.name ?? "the selected concept" : conceptById(current as ConceptId).name} was recorded.`);
       } else {
         setSession({ vote: { concept: current as ConceptId, reason: reason.trim() } });
         toast.success(`Thanks! Your vote for ${conceptById(current as ConceptId).name} was recorded.`);
@@ -127,13 +129,13 @@ function Vote() {
       {!votingOpen && <div className="mb-8 rounded-3xl border border-border bg-card p-8 text-center shadow-soft"><h2 className="text-2xl font-semibold">Voting is not yet open</h2><p className="mx-auto mt-3 max-w-xl text-muted-foreground">{statusMessage}</p><Button asChild variant="hero" size="lg" className="mt-6"><Link to="/describe">Back to design stage</Link></Button></div>}
       <div className="grid gap-8 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          {votingOpen && (s.vote || voted) ? (
+          {votingOpen && (voted || (!authConfigured && s.vote)) ? (
             <div className="rounded-3xl bg-gradient-primary p-10 text-center text-primary-foreground shadow-elegant animate-fade-up">
               <PartyPopper className="mx-auto h-12 w-12" />
               <h2 className="mt-4 text-3xl font-semibold">Thank you for voting!</h2>
               <p className="mt-3 opacity-90">Your vote has been recorded for <b>{live ? selectedLiveConcept?.name ?? "the selected concept" : `Concept ${s.vote?.concept}: ${conceptById(s.vote?.concept ?? "A").name}`}</b>.</p>
               {s.vote?.reason && <p className="mx-auto mt-4 max-w-md rounded-2xl bg-primary-foreground/10 p-4 italic">“{s.vote.reason}”</p>}
-              <p className="mt-6 text-sm opacity-80">{live ? "One vote per authenticated resident." : "One vote per browser session. Your vote is stored only in this browser as demonstration data."}</p>
+              <p className="mt-6 text-sm opacity-80">{authConfigured ? "One vote per authenticated resident." : "One vote per browser session. Your vote is stored only in this browser as demonstration data."}</p>
               <Button asChild variant="glass" size="lg" className="mt-6"><Link to="/dashboard"><BarChart3 /> View dashboard</Link></Button>
             </div>
           ) : votingOpen ? (

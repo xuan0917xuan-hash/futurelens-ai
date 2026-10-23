@@ -48,7 +48,7 @@ function Index() {
                 <Link to="/describe">Start Designing <ArrowRight /></Link>
               </Button>
               <Button asChild variant="glass" size="lg">
-                <Link to="/concepts">Explore Designs</Link>
+                <Link to="/vote">Voting</Link>
               </Button>
             </div>
           </div>

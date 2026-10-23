@@ -31,7 +31,8 @@ export const getConsultationVotingState = createServerFn({ method: "GET" })
     if (!isSupabaseConfigured()) {
       return { phase: "voting_open", feedbackCount: 15, feedbackThreshold: 15, generationStatus: "completed" };
     }
-    const { data: consultation, error } = await createRequestSupabaseClient()
+    const service = createServiceSupabaseClient();
+    const { data: consultation, error } = await service
       .from("consultations")
       .select("phase, feedback_threshold, consultation_feedback(count)")
       .eq("id", data.consultationId)
@@ -40,7 +41,7 @@ export const getConsultationVotingState = createServerFn({ method: "GET" })
     const feedbackCount = Array.isArray(consultation.consultation_feedback)
       ? Number(consultation.consultation_feedback[0]?.count ?? 0)
       : 0;
-    const { data: generation } = await createServiceSupabaseClient()
+    const { data: generation } = await service
       .from("generation_requests")
       .select("status")
       .eq("consultation_id", data.consultationId)
@@ -71,7 +72,6 @@ export const getPublishedConcepts = createServerFn({ method: "GET" })
       .order("created_at");
     if (error) throw new Error(`Unable to load published concepts: ${error.message}`);
 
-    const service = createServiceSupabaseClient();
     return Promise.all((concepts ?? []).map(async (concept) => {
       let imageUrl: string | null = null;
       if (concept.image_storage_key) {

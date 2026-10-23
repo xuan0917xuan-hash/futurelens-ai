@@ -73,6 +73,19 @@ function Dashboard() {
           <div className="mt-5 space-y-3">{data.concepts.length > 0 ? data.concepts.map((concept) => <div key={concept.id} className="flex items-center justify-between rounded-2xl bg-muted px-4 py-3"><span className="font-medium">{concept.name}</span><span className="text-sm text-muted-foreground">{concept.status} · {concept.imageReady ? "image ready" : "image pending"} · {concept.votes} votes</span></div>) : <p className="text-sm text-muted-foreground">No concepts generated yet.</p>}</div>
           <h2 className="mt-8 text-xl font-semibold">Recent request activity</h2>
           {requestBars.length > 0 ? <div className="mt-3 h-48"><ResponsiveContainer><BarChart data={requestBars} layout="vertical" margin={{ left: 20 }}><XAxis type="number" hide /><YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="count" fill="var(--chart-1)" radius={[0, 8, 8, 0]} barSize={18} /></BarChart></ResponsiveContainer></div> : <p className="mt-3 text-sm text-muted-foreground">No resident requests yet.</p>}
+          <h2 className="mt-8 text-xl font-semibold">Resident requests</h2>
+          {data.recentRequests.length > 0 ? (
+            <div className="mt-3 space-y-3">
+              {data.recentRequests.map((request, index) => (
+                <article key={`${request.createdAt}-${index}`} className="rounded-2xl border border-border p-4">
+                  <p className="text-sm leading-6">{request.body}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Submitted {new Date(request.createdAt).toLocaleString()}
+                  </p>
+                </article>
+              ))}
+            </div>
+          ) : <p className="mt-3 text-sm text-muted-foreground">No resident requests yet.</p>}
         </section>
       </div>
     </div>
