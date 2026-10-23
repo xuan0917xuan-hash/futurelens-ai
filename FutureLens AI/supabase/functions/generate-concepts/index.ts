@@ -24,7 +24,7 @@ function isUuid(value: unknown): value is string {
     && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
-function buildDesignBrief(feedback: Array<{ body: string; needs_snapshot: unknown }>) {
+function buildDesignBrief(feedback: Array<{ body: string; needs_snapshot?: unknown }>) {
   const needs = [...new Set(feedback.flatMap((item) =>
     Array.isArray(item.needs_snapshot) ? item.needs_snapshot.map(String) : []))];
   const requests = feedback.map((item) => item.body.trim()).filter(Boolean);
@@ -134,7 +134,7 @@ async function handle(request: Request) {
 
     const { data: feedback, error: feedbackError } = await service
       .from("consultation_feedback")
-      .select("body")
+      .select("body, needs_snapshot")
       .eq("consultation_id", input.consultationId);
     if (feedbackError || !feedback || feedback.length < 15) {
       throw new Error("Concept generation requires 15 completed feedback submissions.");
@@ -162,7 +162,8 @@ async function handle(request: Request) {
         tagline: "Generated from combined community feedback",
         description: brief,
         design_brief: brief,
-        community_needs: feedback.flatMap((item) => item.needs_snapshot),
+        community_needs: feedback.flatMap((item) =>
+          Array.isArray(item.needs_snapshot) ? item.needs_snapshot : []),
         image_storage_key: key,
         status: "draft",
       });

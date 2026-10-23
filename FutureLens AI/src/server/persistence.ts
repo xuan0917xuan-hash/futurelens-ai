@@ -84,10 +84,14 @@ export const submitImprovementFeedback = createServerFn({ method: "POST" })
     let generation: { ok: boolean; jobId?: string; model?: string; error?: string } = { ok: false };
     const { data: consultation } = await createRequestSupabaseClient()
       .from("consultations")
-      .select("phase")
+      .select("phase, feedback_threshold, consultation_feedback(count)")
       .eq("id", data.consultationId)
       .single();
-    if (consultation?.phase === "preparing") {
+    const feedbackCount = Array.isArray(consultation?.consultation_feedback)
+      ? Number(consultation.consultation_feedback[0]?.count ?? 0)
+      : 0;
+    const thresholdReached = feedbackCount >= Number(consultation?.feedback_threshold ?? 15);
+    if (thresholdReached && consultation?.phase !== "closed") {
       try {
         generation = await runConceptGeneration(
           data.consultationId,

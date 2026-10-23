@@ -65,9 +65,11 @@ function Vote() {
         const complete = state.phase === "voting_open"
           && concepts.length === 3
           && concepts.every((concept) => Boolean(concept.imageUrl));
+        const generationInProgress = state.generationStatus === "queued" || state.generationStatus === "running";
         const fallback = !complete
+          && state.phase !== "closed"
           && state.feedbackCount >= state.feedbackThreshold
-          && state.generationStatus === "failed";
+          && !generationInProgress;
         setPublished(fallback ? CONCEPTS.map((concept) => ({
           id: DEMO_OFFICIAL_CONCEPT_IDS[concept.id],
           name: concept.name,
