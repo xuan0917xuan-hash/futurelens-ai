@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Leaf, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ export function Logo() {
 }
 
 export function SiteHeader() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState<"resident" | "developer" | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,11 +41,13 @@ export function SiteHeader() {
     }
   };
 
+  const isProtectedPage = ["/describe", "/concepts", "/compare", "/vote", "/dashboard"].includes(location.pathname);
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
         <Logo />
-        {isAuthenticated && (
+        {(isAuthenticated || isProtectedPage) && (
           <Button variant="outline" size="sm" onClick={logout} aria-label="Log out">
             <LogOut /> Log out
           </Button>
