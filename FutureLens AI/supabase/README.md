@@ -38,6 +38,10 @@ in Supabase Storage, and opens voting only after the complete configured
 concept set has been stored and published. No developer action is required.
 The database also permits each user to claim generation only once per
 consultation; repeated requests are rejected before any provider call.
+If the threshold was reached before the latest generation migration was
+deployed, apply that migration and invoke `generate-concepts` once with an
+authenticated resident access token. The function will move a threshold-reached
+consultation from `feedback_open` to `preparing` and create the missing job.
 
 During the design stage, each resident can also generate exactly one private
 FLUX image from their own request and selected park photograph. This uses the

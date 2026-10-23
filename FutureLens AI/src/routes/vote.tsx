@@ -65,11 +65,9 @@ function Vote() {
         const complete = state.phase === "voting_open"
           && concepts.length === 3
           && concepts.every((concept) => Boolean(concept.imageUrl));
-        const generationInProgress = state.generationStatus === "queued" || state.generationStatus === "running";
         const fallback = !complete
           && state.phase !== "closed"
-          && state.feedbackCount >= state.feedbackThreshold
-          && !generationInProgress;
+          && state.feedbackCount >= state.feedbackThreshold;
         setPublished(fallback ? CONCEPTS.map((concept) => ({
           id: DEMO_OFFICIAL_CONCEPT_IDS[concept.id],
           name: concept.name,
@@ -85,7 +83,7 @@ function Vote() {
             ? ""
             : state.feedbackCount < state.feedbackThreshold
               ? `Voting is not yet open. ${state.feedbackThreshold - state.feedbackCount} more unique resident submissions are needed before concept generation begins.`
-              : "Voting is not yet open. The three community concept images are still being generated.",
+                : "Voting is not yet open. The consultation is not ready for voting.",
         );
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Unable to load published concepts.");
