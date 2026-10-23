@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, Check, PartyPopper } from "lucide-react";
 import { useState } from "react";
 import { useEffect } from "react";
@@ -20,6 +20,10 @@ import { submitVote } from "@/server/persistence";
 import { getConsultationVotingState, getPublishedConcepts, type PublishedConcept } from "@/server/published-concepts";
 
 export const Route = createFileRoute("/vote")({
+  beforeLoad: async () => {
+    const auth = await getCurrentUser();
+    if (!auth.user || auth.user.role !== "resident") throw redirect({ to: "/login" });
+  },
   head: () => ({
     meta: [
       { title: "Community Voting — FutureLens AI" },

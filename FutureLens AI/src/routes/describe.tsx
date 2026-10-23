@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/SiteHeader";
@@ -12,6 +12,10 @@ import { generatePersonalConcept, getMyPersonalConcept } from "@/server/personal
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/describe")({
+  beforeLoad: async () => {
+    const auth = await getCurrentUser();
+    if (!auth.user || auth.user.role !== "resident") throw redirect({ to: "/login" });
+  },
   head: () => ({
     meta: [
       { title: "Describe Your Space — FutureLens AI" },

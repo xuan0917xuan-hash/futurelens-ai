@@ -1,10 +1,14 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { Accessibility, ArrowLeft, ArrowRight, Armchair, Baby, Check, Trees } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DemoBadge, PageHeader } from "@/components/SiteHeader";
 import { CONCEPTS, setSession, useSession } from "@/lib/futurelens";
 
 export const Route = createFileRoute("/compare")({
+  beforeLoad: async () => {
+    const auth = await getCurrentUser();
+    if (!auth.user || auth.user.role !== "resident") throw redirect({ to: "/login" });
+  },
   head: () => ({
     meta: [
       { title: "Compare Designs — FutureLens AI" },

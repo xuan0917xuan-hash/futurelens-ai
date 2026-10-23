@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,10 @@ import { getCurrentUser } from "@/server/auth";
 import { getPublishedConcepts, type PublishedConcept } from "@/server/published-concepts";
 
 export const Route = createFileRoute("/concepts")({
+  beforeLoad: async () => {
+    const auth = await getCurrentUser();
+    if (!auth.user || auth.user.role !== "resident") throw redirect({ to: "/login" });
+  },
   head: () => ({
     meta: [
       { title: "Design Concepts — FutureLens AI" },
