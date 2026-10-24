@@ -11,3 +11,9 @@ export function normalizeUsername(username: string): string {
 export function assertRole(actual: AppRole, required: AppRole): void {
   if (actual !== required) throw new Error("You are not authorized for this action.");
 }
+
+export function assertLoginRole(actual: AppRole, required: AppRole): void {
+  if (actual !== required) {
+    throw new Error(`This account is not registered as a ${required} account.`);
+  }
+}

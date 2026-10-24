@@ -7,7 +7,7 @@ import {
   isSupabaseConfigured,
   usernameEmail,
 } from "./supabase";
-import { assertRole } from "./authorization";
+import { assertLoginRole, assertRole } from "./authorization";
 
 export const credentialsSchema = z.object({
   username: z.string().trim().toLowerCase().regex(/^[a-z0-9_]{3,32}$/),
@@ -77,29 +77,38 @@ export const signUp = createServerFn({ method: "POST" })
     return { user: await getProfile(authData.user.id) };
   });
 
+async function authenticateWithCredentials(data: z.infer<typeof credentialsSchema>) {
+  if (!isSupabaseConfigured()) throw new Error("Supabase is not configured.");
+  const supabase = createRequestSupabaseClient();
+  const { data: profile } = await createServiceSupabaseClient().from("users").select("email").eq("username", data.username).maybeSingle();
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
+    email: profile?.email ?? usernameEmail(data.username),
+    password: data.password,
+  });
+  if (error || !authData.user) throw new Error("Invalid username or password.");
+  const user = await getProfile(authData.user.id);
+  if (!user) throw new Error("Account profile is missing.");
+  return { user };
+}
+
 export const signIn = createServerFn({ method: "POST" })
   .validator(credentialsSchema)
   .handler(async ({ data }) => {
-    if (!isSupabaseConfigured()) throw new Error("Supabase is not configured.");
-    const supabase = createRequestSupabaseClient();
-    const { data: profile } = await createServiceSupabaseClient().from("users").select("email").eq("username", data.username).maybeSingle();
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email: profile?.email ?? usernameEmail(data.username),
-      password: data.password,
-    });
-    if (error || !authData.user) throw new Error("Invalid username or password.");
-    const user = await getProfile(authData.user.id);
-    if (!user) throw new Error("Account profile is missing.");
-    return { user };
+    const result = await authenticateWithCredentials(data);
+    if (result.user.role !== "resident") {
+      await signOut();
+      assertLoginRole(result.user.role, "resident");
+    }
+    return result;
   });
 
 export const signInDeveloper = createServerFn({ method: "POST" })
   .validator(credentialsSchema)
   .handler(async ({ data }) => {
-    const result = await signIn({ data });
-    if (result.user?.role !== "developer") {
+    const result = await authenticateWithCredentials(data);
+    if (result.user.role !== "developer") {
       await signOut();
-      throw new Error("This account is not registered as a developer account.");
+      assertLoginRole(result.user.role, "developer");
     }
     return result;
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { assertRole, normalizeUsername } from "@/server/authorization";
+import { assertLoginRole, assertRole, normalizeUsername } from "@/server/authorization";
 import { credentialsSchema, signupSchema } from "@/server/auth";
 import { generationSchema, voteSchema } from "@/server/persistence";
 
@@ -14,6 +14,13 @@ describe("server authorization and validation", () => {
   it("allows only the requested application role", () => {
     expect(() => assertRole("developer", "developer")).not.toThrow();
     expect(() => assertRole("resident", "developer")).toThrow("not authorized");
+  });
+
+  it("allows each account to use only its matching login flow", () => {
+    expect(() => assertLoginRole("resident", "resident")).not.toThrow();
+    expect(() => assertLoginRole("developer", "developer")).not.toThrow();
+    expect(() => assertLoginRole("developer", "resident")).toThrow("resident account");
+    expect(() => assertLoginRole("resident", "developer")).toThrow("developer account");
   });
 
   it("rejects invalid credentials and persistence identifiers", () => {
